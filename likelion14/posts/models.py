@@ -31,8 +31,6 @@ class Post(BaseModel): # BaseModel을 상속받음
 class Comment(BaseModel):
     id = models.AutoField(primary_key=True)
     content = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comment')
     writer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comment')
 
