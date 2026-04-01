@@ -123,7 +123,51 @@ def post_detail(request, post_id):
             'data' : None
         })
 
+@require_http_methods(["GET", "POST"])
+def comment_list(request, post_id):
+    if request.method == "GET":
+        post = get_object_or_404(Post, pk=post_id)
+        comment_all = post.comment.all()
+
+        comment_all_json = []
+
+        for comment in comment_all:
+            comment_json = {
+                "id" : comment.id,
+                "content" : comment.content
+            }
+            comment_all_json.append(comment_json)
+
+        return JsonResponse({
+            'status' : 200,
+            'message' : '댓글 목록 조회 성공',
+            'data' : comment_all_json
+        })
     
+    if request.method == "POST":
+        body = json.loads(request.body.decode('utf-8'))
+
+        user_id = body.get('user')
+        user = get_object_or_404(User, pk=user_id)
+
+        post = get_object_or_404(Post, pk=post_id)
+
+        new_comment = Comment.objects.create(
+            content = body['content'],
+            post = post,
+            writer = user
+        )
+
+        new_comment_json = {
+            "id" : new_comment.id,
+            "content" : new_comment.content
+        }
+
+        return JsonResponse({
+            'status' : 200,
+            'message' : '댓글 생성 성공',
+            'data' : new_comment_json
+        })
 
 
 # Create your views here.
