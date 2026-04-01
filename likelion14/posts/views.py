@@ -45,7 +45,11 @@ def post_list(request):
     
     # 게시글 전체 조회
     if request.method == "GET":
-        post_all = Post.objects.all()
+        post_all = Post.objects.order_by('created_at')
+
+        category_name = request.GET.get('category', None)
+        if category_name:
+            post_all = post_all.filter(category__name=category_name)
 
         # 각 데이터를 Json 형식으로 변환하여 리스트에 저장 (여러개의 게시글 내용을 담을 거라 리스트를 이용합니다)
         post_all_json = []
