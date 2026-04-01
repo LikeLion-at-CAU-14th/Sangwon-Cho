@@ -45,7 +45,7 @@ def post_list(request):
     
     # 게시글 전체 조회
     if request.method == "GET":
-        post_all = Post.objects.order_by('created_at')
+        post_all = Post.objects.order_by('-created_at')
 
         category_name = request.GET.get('category', None)
         if category_name:
