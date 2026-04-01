@@ -131,7 +131,7 @@ def post_detail(request, post_id):
 def comment_list(request, post_id):
     if request.method == "GET":
         post = get_object_or_404(Post, pk=post_id)
-        comment_all = post.comment.all()
+        comment_all = post.comment.all().order_by('-created_at')
 
         comment_all_json = []
 
