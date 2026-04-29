@@ -52,6 +52,28 @@ class PostDetail(APIView):
 	        },
 	        status=status.HTTP_200_OK
 	    )
+    
+class CommentList(APIView):
+    def get(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
+        comments = post.comment_set.all()
+        comment_data = [{"id": comment.id, "content": comment.content} for comment in comments]
+        return Response(comment_data)
+
+    def post(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
+        content = request.data.get("content")
+        if content:
+            comment = Comment.objects.create(content=content, post=post)
+            return Response({"id": comment.id, "content": comment.content}, status=status.HTTP_201_CREATED)
+        return Response({"error": "Content is required."}, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
+        comments = post.comment_set.all()
+        comments.delete()
+        return Response({"message": "모든 댓글이 성공적으로 삭제되었습니다."}, status=status.HTTP_200_OK)
+    
 
 # # 게시글을 Post(Create), Get(Read) 하는 뷰 로직
 # @require_http_methods(["POST", "GET"])   #함수 데코레이터, 특정 http method 만 허용합니다
