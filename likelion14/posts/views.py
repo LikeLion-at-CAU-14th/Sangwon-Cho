@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.http import Http404
+from accounts.models import User
 
 class PostList(APIView):
     def post(self, request, format=None):
@@ -56,21 +57,36 @@ class PostDetail(APIView):
 class CommentList(APIView):
     def get(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
-        comments = post.comment_set.all()
+        comments = post.comment.all()
         comment_data = [{"id": comment.id, "content": comment.content} for comment in comments]
         return Response(comment_data)
 
     def post(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
         content = request.data.get("content")
-        if content:
-            comment = Comment.objects.create(content=content, post=post)
-            return Response({"id": comment.id, "content": comment.content}, status=status.HTTP_201_CREATED)
-        return Response({"error": "Content is required."}, status=status.HTTP_400_BAD_REQUEST)
+        writer_id = request.data.get("writer")
+
+        if not content:
+            return Response({"error": "Content is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not writer_id:
+            return Response({"error": "Writer is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        writer = get_object_or_404(User, id=writer_id)
+        comment = Comment.objects.create(content=content, post=post, writer=writer)
+        return Response(
+            {
+                "id": comment.id,
+                "content": comment.content,
+                "writer": comment.writer.id,
+                "post": comment.post.id,
+            },
+            status=status.HTTP_201_CREATED,
+        )
     
     def delete(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
-        comments = post.comment_set.all()
+        comments = post.comment.all()
         comments.delete()
         return Response({"message": "모든 댓글이 성공적으로 삭제되었습니다."}, status=status.HTTP_200_OK)
     
