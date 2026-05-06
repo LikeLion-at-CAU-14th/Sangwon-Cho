@@ -14,6 +14,8 @@ from rest_framework import status
 from django.http import Http404
 from accounts.models import User
 
+from rest_framework.permissions import IsAuthenticatedOrReadOnly # jwt 세션
+
 class PostList(APIView):
     def post(self, request, format=None):
         # 생성이라 유효성 검사 필요
@@ -30,6 +32,8 @@ class PostList(APIView):
 
 
 class PostDetail(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    
     def get(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
         serializer = PostSerializer(post)
