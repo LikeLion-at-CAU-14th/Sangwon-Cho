@@ -6,7 +6,7 @@ from .models import *
 import json
 
 ### DRF 관련 import - APIView 사용
-from .serializers import PostSerializer
+from .serializers import PostSerializer, CommentSerializer
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -58,31 +58,20 @@ class CommentList(APIView):
     def get(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
         comments = post.comment.all()
-        comment_data = [{"id": comment.id, "content": comment.content} for comment in comments]
-        return Response(comment_data)
+        serializer = CommentSerializer(comments, many=True)
+        return Response(serializer.data)
 
     def post(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
-        content = request.data.get("content")
-        writer_id = request.data.get("writer")
-
-        if not content:
-            return Response({"error": "Content is required."}, status=status.HTTP_400_BAD_REQUEST)
-
-        if not writer_id:
-            return Response({"error": "Writer is required."}, status=status.HTTP_400_BAD_REQUEST)
-
-        writer = get_object_or_404(User, id=writer_id)
-        comment = Comment.objects.create(content=content, post=post, writer=writer)
-        return Response(
-            {
-                "id": comment.id,
-                "content": comment.content,
-                "writer": comment.writer.id,
-                "post": comment.post.id,
-            },
-            status=status.HTTP_201_CREATED,
-        )
+        # request.data에 post_id를 추가하여 serializer에 전달
+        data = request.data.copy()
+        data['post'] = post_id
+        
+        serializer = CommentSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
