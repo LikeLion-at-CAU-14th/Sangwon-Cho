@@ -72,12 +72,20 @@ class CommentList(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    def delete(self, request, post_id):
+
+
+class CommentDetail(APIView):
+    def delete(self, request, post_id, comment_id):
         post = get_object_or_404(Post, id=post_id)
-        comments = post.comment.all()
-        comments.delete()
-        return Response({"message": "모든 댓글이 성공적으로 삭제되었습니다."}, status=status.HTTP_200_OK)
+        comment = get_object_or_404(Comment, id=comment_id, post=post)
+        comment.delete()
+        return Response(
+            {
+                "message": "댓글이 성공적으로 삭제되었습니다.",
+                "comment_id": comment_id
+            },
+            status=status.HTTP_200_OK
+        )
     
 
 # # 게시글을 Post(Create), Get(Read) 하는 뷰 로직
