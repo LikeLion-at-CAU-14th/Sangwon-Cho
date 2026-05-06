@@ -16,7 +16,12 @@ from accounts.models import User
 
 from rest_framework.permissions import IsAuthenticatedOrReadOnly # jwt 세션
 
+from config.permissions import CustomPermissionOwnerOrReadOnly, CustomPermissionTime
+
+
 class PostList(APIView):
+    permission_classes = [CustomPermissionTime, CustomPermissionOwnerOrReadOnly]
+    
     def post(self, request, format=None):
         # 생성이라 유효성 검사 필요
         serializer = PostSerializer(data=request.data)
@@ -32,7 +37,7 @@ class PostList(APIView):
 
 
 class PostDetail(APIView):
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, CustomPermissionTime, CustomPermissionOwnerOrReadOnly]
     
     def get(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
@@ -59,6 +64,8 @@ class PostDetail(APIView):
 	    )
     
 class CommentList(APIView):
+    permission_classes = [CustomPermissionTime]
+    
     def get(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
         comments = post.comment.all()
@@ -79,6 +86,8 @@ class CommentList(APIView):
 
 
 class CommentDetail(APIView):
+    permission_classes = [CustomPermissionTime]
+
     def delete(self, request, post_id, comment_id):
         post = get_object_or_404(Post, id=post_id)
         comment = get_object_or_404(Comment, id=comment_id, post=post)
