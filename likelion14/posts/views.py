@@ -14,12 +14,19 @@ from rest_framework import status
 from django.http import Http404
 from accounts.models import User
 
+from rest_framework.permissions import IsAuthenticatedOrReadOnly # jwt 세션
+
+from config.permissions import CustomPermissionOwnerOrReadOnly, CustomPermissionTime
+
+
 class PostList(APIView):
+    permission_classes = [CustomPermissionTime, IsAuthenticatedOrReadOnly]
+    
     def post(self, request, format=None):
         # 생성이라 유효성 검사 필요
         serializer = PostSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(writer=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -30,6 +37,8 @@ class PostList(APIView):
 
 
 class PostDetail(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly, CustomPermissionTime, CustomPermissionOwnerOrReadOnly]
+    
     def get(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
         serializer = PostSerializer(post)
@@ -37,6 +46,7 @@ class PostDetail(APIView):
 
     def put(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
+        self.check_object_permissions(request, post)
         serializer = PostSerializer(post, data=request.data)
         if serializer.is_valid(): # update이니까 유효성 검사 필요
             serializer.save()
@@ -45,6 +55,7 @@ class PostDetail(APIView):
     
     def delete(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
+        self.check_object_permissions(request, post)
         post.delete()
         return Response(
 	        {
@@ -55,6 +66,8 @@ class PostDetail(APIView):
 	    )
     
 class CommentList(APIView):
+    permission_classes = [CustomPermissionTime, IsAuthenticatedOrReadOnly]
+    
     def get(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
         comments = post.comment.all()
@@ -69,12 +82,14 @@ class CommentList(APIView):
         
         serializer = CommentSerializer(data=data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(writer=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CommentDetail(APIView):
+    permission_classes = [CustomPermissionTime, IsAuthenticatedOrReadOnly]
+
     def delete(self, request, post_id, comment_id):
         post = get_object_or_404(Post, id=post_id)
         comment = get_object_or_404(Comment, id=comment_id, post=post)
