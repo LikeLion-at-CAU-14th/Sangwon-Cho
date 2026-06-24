@@ -77,6 +77,19 @@ PROJECT_APPS = [
 
 ]
 
+# drf-yasg (Swagger) 설정: Swagger UI에서 Bearer 토큰으로 인증 가능하도록 함
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    },
+    'USE_SESSION_AUTH': False,
+}
+
+
 THIRD_PARTY_APPS = [
     "corsheaders",
     "rest_framework",
@@ -86,7 +99,23 @@ THIRD_PARTY_APPS = [
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google", 
     "allauth.socialaccount.providers.kakao",
+    'storages',
+    'drf_yasg',  # Swagger UI를 위한 라이브러리
 ]
+
+### AWS ###
+# IAM 사용자 관련 정보
+# accessKeys.csv 파일에 있는 내용을 입력 해주세요
+AWS_ACCESS_KEY_ID = get_secret("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = get_secret("AWS_SECRET_ACCESS_KEY")
+AWS_REGION = "ap-northeast-2" # 서울 리전
+
+### S3 ###
+AWS_STORAGE_BUCKET_NAME = "likelion14th-s3"
+AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
 
 
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_PARTY_APPS
@@ -194,3 +223,16 @@ USE_TZ = True
 STATIC_URL = "static/"
 
 AUTH_USER_MODEL = 'accounts.User'
+
+# 비밀번호/포트번호 등의 변수는 secrets.json에 저장한 후 get_secret로 불러오기
+
+DATABASES = {
+	'default': {
+		'ENGINE': 'django.db.backends.mysql',
+		'NAME': get_secret("DB_NAME"),
+		'USER': get_secret("DB_USER"), 
+		'PASSWORD': get_secret("DB_PW"), 
+		'HOST': get_secret("DB_HOST"),
+		'PORT': get_secret("DB_PORT"),
+	}
+}
