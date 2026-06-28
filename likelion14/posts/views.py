@@ -22,6 +22,7 @@ from django.core.files.storage import default_storage
 from .serializers import ImageSerializer
 from django.conf import settings
 import boto3
+import uuid
 
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -44,7 +45,7 @@ class ImageUploadView(APIView):
         )
 
         # S3에 파일 저장
-        file_path = f"uploads/{image_file.name}"
+        file_path = f"uploads/{uuid.uuid4()}_{image_file.name}"
         # S3에 파일 업로드
         try:
             s3_client.put_object(
