@@ -31,6 +31,21 @@ from drf_yasg import openapi
 
 
 class ImageUploadView(APIView):
+    @swagger_auto_schema(
+        operation_summary="이미지 업로드",
+        operation_description="이미지 파일을 S3에 업로드합니다.",
+        manual_parameters=[
+            openapi.Parameter(
+                name="image",
+                in_=openapi.IN_FORM,
+                description="업로드할 이미지 파일",
+                type=openapi.TYPE_FILE,
+                required=True,
+            )
+        ],
+        consumes=["multipart/form-data"],
+        responses={201: ImageSerializer, 400: "잘못된 요청", 500: "S3 업로드 실패"},
+    )
     def post(self, request):
         if 'image' not in request.FILES:
             return Response({"error": "No image file"}, status=status.HTTP_400_BAD_REQUEST)
