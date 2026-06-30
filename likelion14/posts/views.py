@@ -22,6 +22,7 @@ from django.core.files.storage import default_storage
 from .serializers import ImageSerializer
 from django.conf import settings
 import boto3
+import uuid
 
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -30,6 +31,21 @@ from drf_yasg import openapi
 
 
 class ImageUploadView(APIView):
+    @swagger_auto_schema(
+        operation_summary="이미지 업로드",
+        operation_description="이미지 파일을 S3에 업로드합니다.",
+        manual_parameters=[
+            openapi.Parameter(
+                name="image",
+                in_=openapi.IN_FORM,
+                description="업로드할 이미지 파일",
+                type=openapi.TYPE_FILE,
+                required=True,
+            )
+        ],
+        consumes=["multipart/form-data"],
+        responses={201: ImageSerializer, 400: "잘못된 요청", 500: "S3 업로드 실패"},
+    )
     def post(self, request):
         if 'image' not in request.FILES:
             return Response({"error": "No image file"}, status=status.HTTP_400_BAD_REQUEST)
@@ -44,7 +60,7 @@ class ImageUploadView(APIView):
         )
 
         # S3에 파일 저장
-        file_path = f"uploads/{image_file.name}"
+        file_path = f"uploads/{uuid.uuid4()}_{image_file.name}"
         # S3에 파일 업로드
         try:
             s3_client.put_object(
@@ -96,12 +112,22 @@ class PostList(APIView):
 
 class PostDetail(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly, CustomPermissionTime, CustomPermissionOwnerOrReadOnly]
-    
+    @swagger_auto_schema(
+            operation_summary="게시글 조회",
+            operation_description="게시글을 조회합니다.",
+            responses={200: PostSerializer},
+    )
     def get(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
         serializer = PostSerializer(post)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+            operation_summary="게시글 수정",
+            operation_description="기존 게시글을 수정합니다.",
+            request_body=PostSerializer,  # 요청 데이터의 스키마 정의
+            responses={200: PostSerializer, 400: "잘못된 요청"},  # 응답 데이터의 스키마 정의
+    )
     def put(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
         self.check_object_permissions(request, post)
@@ -111,6 +137,11 @@ class PostDetail(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)   
     
+    @swagger_auto_schema(
+            operation_summary="게시글 삭제",
+            operation_description="기존 게시글을 삭제합니다.",
+            responses={200: openapi.Response(description="게시글이 성공적으로 삭제되었습니다.")},
+    )
     def delete(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
         self.check_object_permissions(request, post)
@@ -126,12 +157,23 @@ class PostDetail(APIView):
 class CommentList(APIView):
     permission_classes = [CustomPermissionTime, IsAuthenticatedOrReadOnly]
     
+    @swagger_auto_schema(
+            operation_summary="댓글 조회",
+            operation_description="댓글을 조회합니다.",
+            responses={200: CommentSerializer(many=True)},
+    )
     def get(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
         comments = post.comment.all()
         serializer = CommentSerializer(comments, many=True)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+            operation_summary="댓글 작성",
+            operation_description="새로운 댓글을 작성합니다.",
+            request_body=CommentSerializer,  # 요청 데이터의 스키마 정의
+            responses={201: CommentSerializer, 400: "잘못된 요청"},  # 응답 데이터의 스키마 정의
+    )
     def post(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
         # request.data에 post_id를 추가하여 serializer에 전달
@@ -148,6 +190,11 @@ class CommentList(APIView):
 class CommentDetail(APIView):
     permission_classes = [CustomPermissionTime, IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(
+            operation_summary="댓글 삭제",
+            operation_description="기존 댓글을 삭제합니다.",
+            responses={200: openapi.Response(description="댓글이 성공적으로 삭제되었습니다.")},
+    )
     def delete(self, request, post_id, comment_id):
         post = get_object_or_404(Post, id=post_id)
         comment = get_object_or_404(Comment, id=comment_id, post=post)
