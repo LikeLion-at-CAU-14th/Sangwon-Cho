@@ -27,6 +27,7 @@ import uuid
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
+from config.custom_exceptions import PostNotFoundException # 추가 - 커스텀 예외처리 실습용
 
 
 
@@ -97,7 +98,7 @@ class PostList(APIView):
         if serializer.is_valid():
             serializer.save(writer=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @swagger_auto_schema(
         operation_summary="게시글 목록 조회",
@@ -108,6 +109,37 @@ class PostList(APIView):
         posts = Post.objects.all()
         serializer = PostSerializer(posts, many=True)
         return Response(serializer.data)
+
+# @require_http_methods(["GET"])
+# def get_post_detail(reqeust, id):
+#     post = get_object_or_404(Post, pk=id)
+#     post_detail_json = {
+#         "id" : post.id,
+#         "title" : post.title,
+#         "content" : post.content,
+#         "status" : post.status,
+#         "user" : post.user.username
+#     }
+#     return JsonResponse({
+#         "status" : 200,
+#         "data": post_detail_json})
+@require_http_methods(["GET"])
+def get_post_detail(reqeust, id):
+    try:
+        post = Post.objects.get(id=id)
+        post_detail_json = {
+            "id" : post.id,
+            "title" : post.title,
+            "content" : post.content,
+            "status" : post.status,
+            "user" : post.user.username
+        }
+        return JsonResponse({
+            "status" : 200,
+            "data": post_detail_json})
+    except Post.DoesNotExist:
+        raise PostNotFoundException
+
 
 
 class PostDetail(APIView):
