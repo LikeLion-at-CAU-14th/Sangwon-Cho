@@ -22,3 +22,8 @@ class ConflictException(BaseCustomAPIException):
 class PostConflictException(ConflictException):
     default_detail = "A conflict occurred with the post."
     default_code = "POST-CONFLICT"
+
+class ValidationErrorException(BaseCustomAPIException):
+    status_code = 400
+    default_detail = "Validation error occurred."
+    default_code = "VALIDATION-ERROR"

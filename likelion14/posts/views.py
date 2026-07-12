@@ -21,11 +21,13 @@ from config.permissions import CustomPermissionOwnerOrReadOnly, CustomPermission
 from django.core.files.storage import default_storage  
 from .serializers import ImageSerializer
 from django.conf import settings
+from django.utils import timezone
 import boto3
 import uuid
 
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from config.custom_api_exceptions import PostConflictException, ValidationErrorException
 
 from config.custom_exceptions import PostNotFoundException # 추가 - 커스텀 예외처리 실습용
 
@@ -94,11 +96,16 @@ class PostList(APIView):
     )
     def post(self, request, format=None):
         # 생성이라 유효성 검사 필요
+        if not request.data:
+            raise ValidationErrorException(detail="게시글 생성에 필요한 필드값(title, content)을 입력해주세요.")
+
+        if Post.objects.filter(writer=request.user, created_at__date=timezone.localdate()).exists():
+            raise PostConflictException(detail="게시글은 하루에 하나만 작성할 수 있습니다.")
+
         serializer = PostSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(writer=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(writer=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
     
     @swagger_auto_schema(
         operation_summary="게시글 목록 조회",
