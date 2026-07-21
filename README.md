@@ -17,3 +17,13 @@ Blog : [velog](https://velog.io/@sangwon5579/posts)
 ## Contact
 Email : chpsangwon5579@gmail.com  
 Github : [sangwon5579](https://github.com/sangwon5579)
+
+---
+과제 1-1   
+![alt text](exception_images/image.png)
+과제 1-2  
+![alt text](exception_images/image-1.png)
+과제 1-3  
+![alt text](exception_images/image-2.png)
+과제 1-4  
+![alt text](exception_images/image-3.png)
